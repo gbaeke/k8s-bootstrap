@@ -5,7 +5,7 @@ metadata:
   name: akv2k8s
   namespace: flux-system
 spec:
-  interval: 1m0s
+  interval: 5m0s
   path: ./akv2k8s
   prune: true
   healthChecks:
