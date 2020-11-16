@@ -8,8 +8,10 @@ spec:
   interval: 1m0s
   path: ./akv2k8s
   prune: true
-  health-check: "Deployment/akv2k8s-controller.akv2k8s"
-  health-check-timeout: 2m
+  healthChecks:
+    - kind: Deployment
+      name: akv2k8s-controller.akv2k8s
+      timeout: 1m  
   sourceRef:
     kind: GitRepository
     name: k8s-common
