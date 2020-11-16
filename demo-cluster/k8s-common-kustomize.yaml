@@ -12,4 +12,6 @@ spec:
     kind: GitRepository
     name: k8s-common
   validation: client
+  dependsOn:
+    - name: k8s-secrets
 
