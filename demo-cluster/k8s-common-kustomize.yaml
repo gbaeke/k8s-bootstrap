@@ -14,4 +14,3 @@ spec:
   validation: client
   dependsOn:
     - name: k8s-secrets
-
