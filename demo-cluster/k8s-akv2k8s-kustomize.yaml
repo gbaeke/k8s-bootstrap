@@ -10,7 +10,8 @@ spec:
   prune: true
   healthChecks:
     - kind: Deployment
-      name: "akv2k8s-controller.akv2k8s"
+      name: "akv2k8s-controller"
+      namespace: akv2k8s
   sourceRef:
     kind: GitRepository
     name: k8s-common
