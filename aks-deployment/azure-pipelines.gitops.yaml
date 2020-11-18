@@ -1,0 +1,50 @@
+# AKS deployment pipeline
+trigger: none
+
+variables:
+  CLUSTERNAME: 'CLUSTERNAME'
+  RG: 'CLUSTER_RESOURCE_GROUP'
+  GITHUB_REPO: 'k8s-bootstrap'
+  GITHUB_USER: 'GITHUB_USER'
+  KEY_VAULT: 'KEYVAULT_SHORTNAME'
+
+stages:
+- stage: DeployGitOpsCluster
+  jobs:
+  - job: 'Deployment'
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps: 
+    # DEPLOY AKS
+    - task: AzureResourceGroupDeployment@2
+      inputs:
+        azureSubscription: 'AzureMPN'
+        action: 'Create Or Update Resource Group'
+        resourceGroupName: '$(RG)'
+        location: 'West Europe'
+        templateLocation: 'Linked artifact'
+        csmFile: 'aks/deploy.json'
+        csmParametersFile: 'aks/deployparams.gitops.json'
+        overrideParameters: '-clusterName $(CLUSTERNAME)'
+        deploymentMode: 'Incremental'
+        deploymentName: 'aks-gitops-deploy'
+       
+    # INSTALL KUBECTL
+    - task: KubectlInstaller@0
+      name: InstallKubectl
+      inputs:
+        kubectlVersion: '1.18.8'
+
+    # GET CREDS TO K8S CLUSTER WITH ADMIN AND INSTALL FLUX V2
+    - task: AzureCLI@1
+      name: RunAzCLIScripts
+      inputs:
+        azureSubscription: 'AzureMPN'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          export GITHUB_TOKEN=$(GITHUB_TOKEN)
+          az aks get-credentials -g $(RG) -n $(CLUSTERNAME) --admin
+          msi="$(az aks show -n CLUSTERNAME -g CLUSTER_RESOURCE_GROUP | jq .identityProfile.kubeletidentity.objectId -r)"
+          az keyvault set-policy --name $(KEY_VAULT) --object-id $msi --secret-permissions get
+          curl -s https://toolkit.fluxcd.io/install.sh | sudo bash
+          flux bootstrap github --owner=$(GITHUB_USER) --repository=$(GITHUB_REPO) --branch=main --path=demo-cluster --personal
